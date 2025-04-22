@@ -1,0 +1,101 @@
+import java.util.Scanner;
+
+class LFSR {
+    private char[] seed;
+    private int length;
+    private int xorPlace1;
+    private int xorPlace2;
+
+    // Constructor to initialize the LFSR
+    public LFSR(char[] seed, int xorPlace1, int xorPlace2) {
+        this.seed = seed;
+        this.length = seed.length;
+        this.xorPlace1 = xorPlace1;
+        this.xorPlace2 = xorPlace2;
+    }
+
+    // Method to generate the LFSR sequence (keystream)
+    public String generateLFSR(int sequenceLength) {
+        StringBuilder sequence = new StringBuilder();
+
+        for (int i = 0; i < sequenceLength; i++) {
+            // Append the last bit in the shift register to the sequence
+            sequence.append(seed[length - 1]);
+
+            // Compute the new bit using XOR between the taps
+            char newBit = (char) (((seed[xorPlace1 - 1] - '0') ^ (seed[xorPlace2 - 1] - '0')) + '0');
+
+            // Shift all bits to the right
+            for (int j = length - 1; j > 0; j--) {
+                seed[j] = seed[j - 1];
+            }
+            seed[0] = newBit; // Place new bit at the beginning
+        }
+
+        return sequence.toString();
+    }
+
+    // Encryption/Decryption 
+    public String streamCipher(String text, String keystream) {
+        StringBuilder result = new StringBuilder();
+
+        for (int i = 0; i < text.length(); i++) {
+            char textChar = text.charAt(i);
+            char keyChar = keystream.charAt(i); // Use full keystream up to message length
+
+            // Convert textChar and keyChar ('0'/'1') to integers (0/1)
+            int textBit = textChar - '0';
+            int keyBit = keyChar - '0';
+
+            // XOR operation
+            int encryptedBit = textBit ^ keyBit;
+
+            // Convert result back to char
+            char encryptedChar = (char) (encryptedBit + '0');
+
+            result.append(encryptedChar);
+        }
+
+        return result.toString();
+    }
+}
+
+public class Main {
+
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+
+        // Step 1: Input the initial seed
+        System.out.print("Enter the initial seed: ");
+        String initialSeed = scanner.nextLine();
+
+        //Input the tap positions separately
+        System.out.print("Enter first tap position: ");
+        int xorPlace1 = scanner.nextInt();
+
+        System.out.print("Enter second tap position: ");
+        int xorPlace2 = scanner.nextInt();
+        scanner.nextLine(); 
+
+        //Initialize the LFSR
+        LFSR lfsr = new LFSR(initialSeed.toCharArray(), xorPlace1, xorPlace2);
+
+        //Generate the keystream (100 bits)
+        String keystream = lfsr.generateLFSR(124);
+        System.out.println("Generated Keystream: " + keystream);
+
+        //Input message to encrypt
+        System.out.print("Enter a binary message to encrypt: ");
+        String message = scanner.nextLine();
+
+        //Encrypt message
+        String encryptedMessage = lfsr.streamCipher(message, keystream);
+        System.out.println("Encrypted Message: " + encryptedMessage);
+
+        //Decrypt message
+        String decryptedMessage = lfsr.streamCipher(encryptedMessage, keystream);
+        System.out.println("Decrypted Message: " + decryptedMessage);
+
+        scanner.close();
+    }
+}
